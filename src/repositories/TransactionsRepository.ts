@@ -6,6 +6,12 @@ interface Balance {
   total: number;
 }
 
+interface CreateTransactionDTO {
+  title: string;
+  value: number;
+  type: 'income' | 'outcome';
+}
+
 class TransactionsRepository {
   private transactions: Transaction[];
 
@@ -14,15 +20,43 @@ class TransactionsRepository {
   }
 
   public all(): Transaction[] {
-    // TODO
+    return this.transactions;
   }
 
   public getBalance(): Balance {
-    // TODO
+    const balance = this.transactions.reduce(
+      (final, actual) => {
+        if (actual.type === 'income') {
+          final.income += actual.value;
+          final.total += actual.value;
+        }
+
+        if (actual.type === 'outcome') {
+          final.outcome += actual.value;
+          final.total -= actual.value;
+        }
+
+        return final;
+      },
+      { income: 0, outcome: 0, total: 0 },
+    );
+
+    return balance;
   }
 
-  public create(): Transaction {
-    // TODO
+  public create({ title, value, type }: CreateTransactionDTO): Transaction {
+    const transaction = new Transaction({ title, value, type });
+
+    if (transaction.type === 'outcome') {
+      const balance = this.getBalance();
+      if (transaction.value > balance.total) {
+        throw Error('You cannot afford this transaction.');
+      }
+    }
+
+    this.transactions.push(transaction);
+
+    return transaction;
   }
 }
 
